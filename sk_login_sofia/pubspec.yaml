@@ -48,6 +48,9 @@ dependencies:
   path: ^1.8.3
   flutter_blue: ^0.8.0
   flutter_local_notifications: ^14.1.1
+  events_emitter: ^0.0.7
+  vibration: ^1.7.7
+  shell: ^2.0.0
 
 dev_dependencies:
   flutter_test:

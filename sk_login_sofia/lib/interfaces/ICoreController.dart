@@ -1,4 +1,4 @@
-
+import 'package:events_emitter/events_emitter.dart';
 import 'package:sk_login_sofia/enums/direction.dart';
 import 'package:sk_login_sofia/enums/operation_mode.dart';
 import 'package:sk_login_sofia/interfaces/IDataLoggerService.dart';
@@ -15,6 +15,7 @@ enum TypeMissionStatus {
 }
 
 abstract class ICoreController {
+  EventEmitter _eventEmitter = EventEmitter();
   bool? isInForeground;
   List<BLEDevice>? devices;
   BLEDevice? nearestDevice;
@@ -25,22 +26,11 @@ abstract class ICoreController {
   bool? outOfService;
   bool? presenceOfLight;
   String? carFloor;
-
- int get carFloorNum {
-  int val;
-  try {
-    val = int.parse(carFloor ?? '');
-  } catch (e) {
-    val = 0; // Provide a default value if parsing fails
-  }
-  return val;
-}
-
-
+  int? carFloorNum;
 
   Direction? carDirection;
   int? eta;
-  TypeMissionStatus? missionStatus;
+  TypeMissionStatus? _missionStatus;
 
   Future<void> startScanningAsync();
   Future<void> stopScanningAsync();
@@ -48,9 +38,10 @@ abstract class ICoreController {
   Future<void> getCarFloor();
   Future<void> connectDevice(BLEDevice device);
 
-  void onNearestDeviceChanged(void Function(BLEDevice) handler);
-  void onFloorChanged(void Function(String) handler);
-  void onMissionStatusChanged(void Function() handler);
-  void onCharacteristicUpdated(void Function() handler);
-  void onDeviceDisconnected(void Function() handler);
+  // Event Handlers
+  void Function(BLEDevice)? onNearestDeviceChanged;
+  void Function(String)? onFloorChanged;
+  void Function()? onMissionStatusChanged;
+  void Function()? onCharacteristicUpdated;
+  void Function()? onDeviceDisconnected;
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:sk_login_sofia/interfaces/IBLEService.dart';
 import 'package:sk_login_sofia/models/BLECharacteristicEventArgs.dart';
@@ -7,6 +8,7 @@ class BLEService implements IBLEService {
   BluetoothDevice? _connectedDevice;
   List<BluetoothService> _services = [];
   List<int> _valueFromCharacteristic = [];
+  bool timeoutBle = false;
 
   String get connectedDeviceId => _connectedDevice?.id.id ?? '';
 
@@ -14,7 +16,23 @@ class BLEService implements IBLEService {
 
   @override
   void timer1msTickk() {
-    // Implement your logic for the timer tick here
+    Timer.periodic(Duration(milliseconds: 5), (timer) async {
+      await Future.delayed(Duration(milliseconds: 1));
+
+      if (timeoutBle) {
+        await stopScanningAsync();
+        await startScanningAsync(-1);
+
+        // if (Preferences.getBool('DevOptions', false) == true) {
+        //   // Vibration.vibrate();
+        //   if (Platform.isAndroid) {
+        //     // Code for Android platform
+        //   }
+        // }
+      } else {
+        timeoutBle = true;
+      }
+    });
   }
 
   @override
@@ -60,7 +78,8 @@ class BLEService implements IBLEService {
   @override
   Future<void> startScanningAsync(int scanTimeout) async {
     try {
-      await FlutterBlue.instance.startScan(timeout: Duration(seconds: scanTimeout));
+      await FlutterBlue.instance
+          .startScan(timeout: Duration(seconds: scanTimeout));
     } catch (e) {
       print('Failed to start scanning: $e');
     }
@@ -79,10 +98,10 @@ class BLEService implements IBLEService {
   Future<void> connectToDeviceAsync(String deviceId) async {
     try {
       final devices = await FlutterBlue.instance.connectedDevices;
-      final device = devices.firstWhere((d) => d.id.id == deviceId, orElse: () => null);
-      if (device != null) {
-        await connectToDevice(device);
-      }
+      final device = devices.firstWhere((d) => d.id.id == deviceId, orElse: () {
+        throw Exception('No device found with ID $deviceId');
+      });
+      await connectToDevice(device);
     } catch (e) {
       print('Failed to connect to device: $e');
     }
@@ -121,16 +140,21 @@ class BLEService implements IBLEService {
   }
 
   @override
-  Future<void> startCharacteristicWatchAsync(String serviceGuid, String characteristicGuid) async {
-    final service = _services.firstWhere((s) => s.uuid.toString() == serviceGuid, orElse: () => throw Exception('Service not found'));
+  Future<void> startCharacteristicWatchAsync(
+      String serviceGuid, String characteristicGuid) async {
+    final service = _services.firstWhere(
+        (s) => s.uuid.toString() == serviceGuid,
+        orElse: () => throw Exception('Service not found'));
     if (service != null) {
       await subscribeToCharacteristic(service, characteristicGuid);
     }
   }
 
-  Future<void> subscribeToCharacteristic(BluetoothService service, String characteristicGuid) async {
-    final characteristic = service.characteristics
-        .firstWhere((c) => c.uuid.toString() == characteristicGuid, orElse: () => throw Exception('Characteristic not found'));
+  Future<void> subscribeToCharacteristic(
+      BluetoothService service, String characteristicGuid) async {
+    final characteristic = service.characteristics.firstWhere(
+        (c) => c.uuid.toString() == characteristicGuid,
+        orElse: () => throw Exception('Characteristic not found'));
 
     if (characteristic != null) {
       await characteristic.setNotifyValue(true);
@@ -143,16 +167,21 @@ class BLEService implements IBLEService {
   }
 
   @override
-  Future<void> stopCharacteristicWatchAsync(String serviceGuid, String characteristicGuid) async {
-    final service = _services.firstWhere((s) => s.uuid.toString() == serviceGuid, orElse: () => throw Exception('Service not found'));
+  Future<void> stopCharacteristicWatchAsync(
+      String serviceGuid, String characteristicGuid) async {
+    final service = _services.firstWhere(
+        (s) => s.uuid.toString() == serviceGuid,
+        orElse: () => throw Exception('Service not found'));
     if (service != null) {
       await unsubscribeFromCharacteristic(service, characteristicGuid);
     }
   }
 
-  Future<void> unsubscribeFromCharacteristic(BluetoothService service, String characteristicGuid) async {
-    final characteristic = service.characteristics
-        .firstWhere((c) => c.uuid.toString() == characteristicGuid, orElse: () => throw Exception('Characteristic not found'));
+  Future<void> unsubscribeFromCharacteristic(
+      BluetoothService service, String characteristicGuid) async {
+    final characteristic = service.characteristics.firstWhere(
+        (c) => c.uuid.toString() == characteristicGuid,
+        orElse: () => throw Exception('Characteristic not found'));
 
     if (characteristic != null) {
       await characteristic.setNotifyValue(false);
@@ -160,17 +189,21 @@ class BLEService implements IBLEService {
   }
 
   @override
-  Future<void> sendCommandAsync(String serviceGuid, String characteristicGuid, List<int> message) async {
-    final service = _services.firstWhere((s) => s.uuid.toString() == serviceGuid, orElse: () => throw Exception('Service not found'));
+  Future<void> sendCommandAsync(
+      String serviceGuid, String characteristicGuid, List<int> message) async {
+    final service = _services.firstWhere(
+        (s) => s.uuid.toString() == serviceGuid,
+        orElse: () => throw Exception('Service not found'));
     if (service != null) {
       await writeCharacteristic(service, characteristicGuid, message);
     }
   }
 
-  Future<void> writeCharacteristic(
-      BluetoothService service, String characteristicUuid, List<int> value) async {
-    final characteristic = service.characteristics
-        .firstWhere((c) => c.uuid.toString() == characteristicUuid, orElse: () => throw Exception('Characteristic not found'));
+  Future<void> writeCharacteristic(BluetoothService service,
+      String characteristicUuid, List<int> value) async {
+    final characteristic = service.characteristics.firstWhere(
+        (c) => c.uuid.toString() == characteristicUuid,
+        orElse: () => throw Exception('Characteristic not found'));
 
     if (characteristic != null) {
       await characteristic.write(value, withoutResponse: true);
@@ -178,8 +211,11 @@ class BLEService implements IBLEService {
   }
 
   @override
-  Future<void> getValueFromCharacteristicGuid(String serviceGuid, String characteristicGuid) async {
-    final service = _services.firstWhere((s) => s.uuid.toString() == serviceGuid, orElse: () => throw Exception('Service not found'));
+  Future<void> getValueFromCharacteristicGuid(
+      String serviceGuid, String characteristicGuid) async {
+    final service = _services.firstWhere(
+        (s) => s.uuid.toString() == serviceGuid,
+        orElse: () => throw Exception('Service not found'));
     if (service != null) {
       await readCharacteristic(service, characteristicGuid);
     }
@@ -187,8 +223,9 @@ class BLEService implements IBLEService {
 
   Future<void> readCharacteristic(
       BluetoothService service, String characteristicUuid) async {
-    final characteristic = service.characteristics
-        .firstWhere((c) => c.uuid.toString() == characteristicUuid, orElse: () => throw Exception('Characteristic not found'));
+    final characteristic = service.characteristics.firstWhere(
+        (c) => c.uuid.toString() == characteristicUuid,
+        orElse: () => throw Exception('Characteristic not found'));
 
     if (characteristic != null) {
       final value = await characteristic.read();

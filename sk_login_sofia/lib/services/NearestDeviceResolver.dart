@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:sk_login_sofia/interfaces/INearestDeviceResolver.dart';
 import 'package:sk_login_sofia/models/BLEDevice.dart';
@@ -16,11 +18,18 @@ class NearestDeviceResolver implements INearestDeviceResolver {
   late BLEDevice nearestDevice;
   ValueNotifier<BLEDevice?> onNearestDeviceChangedNotifier =
       ValueNotifier<BLEDevice?>(null);
-  void Function(BLEDevice?)? _onNearestDeviceChanged;
+  StreamController<BLEDevice?> _onNearestDeviceChanged =
+      StreamController.broadcast();
 
   NearestDeviceResolver() {
     _monitoraggioSoloPiano = true;
     devices = <BLEDevice>[];
+  }
+
+  @override
+  Stream<BLEDevice> get onNearestDeviceChanged {
+    // Implementation logic for returning the stream of nearest device changes
+    throw UnimplementedError();
   }
 
   void addSample(BLESample sample) {
@@ -35,8 +44,8 @@ class NearestDeviceResolver implements INearestDeviceResolver {
   }
 
   void refreshNearestDevice(DateTime timestamp) {
-    clearUnreachableDevices(
-        timestamp.subtract(Duration(milliseconds: UNREACHABLE_DEVICE_TIMEOUT as int)));
+    clearUnreachableDevices(timestamp
+        .subtract(Duration(milliseconds: UNREACHABLE_DEVICE_TIMEOUT as int)));
     var currentNearestDevice = getNearestDeviceImpl(devices);
     var lastTs = currentNearestDevice != null
         ? currentNearestDevice.lastSampleTimestamp!
@@ -55,31 +64,30 @@ class NearestDeviceResolver implements INearestDeviceResolver {
     }
   }
 
- void clearUnreachableDevices(DateTime from) {
-  var devicesToRemove = devices
-      .where((d) => d.lastSampleTimestamp != null && d.lastSampleTimestamp! < from)
-      .toList();
+  void clearUnreachableDevices(DateTime from) {
+    var devicesToRemove = devices
+        .where((d) =>
+            d.lastSampleTimestamp != null &&
+            d.lastSampleTimestamp!.isBefore(from))
+        .toList();
 
-  for (var device in devicesToRemove) {
-    devices.remove(device);
+    for (var device in devicesToRemove) {
+      devices.remove(device);
+    }
   }
-}
 
-
-BLEDevice findDevice(BLESample sample) {
-  var device = devices.firstWhere((d) => d.id == sample.deviceId, orElse: () {
-    var newDevice = BLEDevice(
-      type: sample.deviceType,
-      id: sample.deviceId,
-      alias: sample.alias,
-    );
-    devices.add(newDevice);
-    return newDevice;
-  });
-  return device;
-}
-
-
+  BLEDevice findDevice(BLESample sample) {
+    var device = devices.firstWhere((d) => d.id == sample.deviceId, orElse: () {
+      var newDevice = BLEDevice(
+        type: sample.deviceType,
+        id: sample.deviceId,
+        alias: sample.alias,
+      );
+      devices.add(newDevice);
+      return newDevice;
+    });
+    return device;
+  }
 
   BLEDevice? getNearestDeviceImpl(List<BLEDevice> devices) {
     if (_monitoraggioSoloPiano!) {
@@ -143,8 +151,8 @@ BLEDevice findDevice(BLESample sample) {
   bool get monitoraggioSoloPiano => _monitoraggioSoloPiano!;
 
   @override
-  set monitoraggioSoloPiano(bool value) {
-    _monitoraggioSoloPiano = value;
+  set monitoraggioSoloPiano(bool? value) {
+    _monitoraggioSoloPiano = value ?? false;
   }
 
   @override
@@ -160,13 +168,5 @@ BLEDevice findDevice(BLESample sample) {
   @override
   ValueNotifier<BLEDevice?> getOnNearestDeviceChanged() {
     return onNearestDeviceChangedNotifier;
-  }
-
-  @override
-  void onNearestDeviceChanged(void Function(BLEDevice?) value) {
-    _onNearestDeviceChanged = value;
-    onNearestDeviceChangedNotifier.addListener(() {
-      _onNearestDeviceChanged?.call(nearestDevice);
-    });
   }
 }

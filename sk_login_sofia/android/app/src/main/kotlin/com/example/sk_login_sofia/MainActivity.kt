@@ -6,9 +6,11 @@ import io.flutter.plugin.common.MethodChannel;
 import android.media.MediaPlayer;
 
 
+
+
 class MainActivity: FlutterActivity() {
 
-    private val AUDIO_METHOD_CHANNEL = "audio_service"
+private val AUDIO_METHOD_CHANNEL = "audio_service"
 
 override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)

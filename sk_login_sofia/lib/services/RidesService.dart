@@ -1,8 +1,12 @@
-import 'package:sk_login_sofia/interfaces/IRidesService.dart';
 import 'package:sk_login_sofia/models/Ride.dart';
-import 'package:sk_login_sofia/models/RideSearchParameters.dart';
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+
+abstract class IRidesService {
+  Future<Ride> addAsync(Ride ride);
+  Future<List<Ride>> searchAsync(RideSearchParameters parameters);
+}
 
 class RidesService implements IRidesService {
   static const String databaseName = 'rides.db';
@@ -28,6 +32,7 @@ class RidesService implements IRidesService {
 
   @override
   Future<Ride> addAsync(Ride ride) async {
+    // Actual implementation of the addAsync method goes here.
     final db = await _openDatabase();
     ride.id = await db.insert('rides', ride.toMap());
     return ride;

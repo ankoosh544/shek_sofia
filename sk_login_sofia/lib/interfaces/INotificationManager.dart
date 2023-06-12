@@ -1,8 +1,5 @@
-import 'package:flutter/foundation.dart';
-
 abstract class INotificationManager {
-Stream<void> get notificationReceived;
-
+  Stream<void> get notificationReceived;
 
   void initialize();
   void sendNotification(String title, String message, [DateTime? notifyTime]);

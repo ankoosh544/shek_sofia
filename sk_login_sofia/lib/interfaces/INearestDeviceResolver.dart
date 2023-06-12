@@ -1,7 +1,6 @@
-
-
 import 'package:sk_login_sofia/models/BLEDevice.dart';
 import 'package:sk_login_sofia/models/BLESample.dart';
+import 'package:meta/meta.dart';
 
 abstract class INearestDeviceResolver {
   List<BLEDevice> get devices;
@@ -12,5 +11,6 @@ abstract class INearestDeviceResolver {
   void refreshNearestDevice(DateTime timestamp);
   void clearUnreachableDevices(DateTime from);
 
-  void Function(BLEDevice)? onNearestDeviceChanged;
+  @visibleForTesting
+  Stream<BLEDevice> get onNearestDeviceChanged;
 }

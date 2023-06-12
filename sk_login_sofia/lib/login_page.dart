@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get_it/get_it.dart';
@@ -115,49 +114,68 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> loginUtente() async {
-  final currentContext = context; // Store the current context
+    final currentContext = context; // Store the current context
 
-  showDialog(
-    context: currentContext,
-    builder: (context) => Material(
-      child: Center(
-        child: CircularProgressIndicator(),
-      ),
-    ),
-  );
-
-  final valid = await authService.loginAsync(usernameController.text, passwordController.text);
-
-  setState(() {
-    errorMessage = valid ? '' : AppLocalizations.of(currentContext)!.invalidCredential;
-  });
-
-  if (valid && rememberPassword) {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('PasswordUtente', passwordController.text);
-  }
-
-  passwordController.text = '';
-
-  Navigator.pop(currentContext); // Close the loading dialog
-
-  if (valid) {
-    final user = await authService.detailsAsync();
-    if (user != null) {
-      coreController.loggerUser = user;
-      // Navigator.pushNamed(currentContext, '/CommandPage');
-      Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CommandPage(),
+    showDialog(
+      context: currentContext,
+      builder: (context) => Material(
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
       ),
     );
+
+    final valid = await authService.loginAsync(
+        usernameController.text, passwordController.text);
+
+    setState(() {
+      errorMessage =
+          valid ? '' : AppLocalizations.of(currentContext)!.invalidCredential;
+    });
+
+    if (valid && rememberPassword) {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('PasswordUtente', passwordController.text);
+    }
+
+    passwordController.text = '';
+
+    Navigator.pop(currentContext); // Close the loading dialog
+
+    if (valid) {
+      final user = await authService.detailsAsync();
+      if (user != null) {
+        coreController.loggerUser = user;
+        // Navigator.pushNamed(currentContext, '/CommandPage');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CommandPage(),
+          ),
+        );
+      } else {
+        showDialog(
+          context: currentContext,
+          builder: (context) => AlertDialog(
+            title: Text('Info'),
+            content: Text('Failed to retrieve user details.'),
+            actions: [
+              TextButton(
+                child: Text('OK'),
+                onPressed: () {
+                  Navigator.pop(currentContext);
+                },
+              ),
+            ],
+          ),
+        );
+      }
     } else {
       showDialog(
         context: currentContext,
         builder: (context) => AlertDialog(
           title: Text('Info'),
-          content: Text('Failed to retrieve user details.'),
+          content: Text('Invalid username or password'),
           actions: [
             TextButton(
               child: Text('OK'),
@@ -169,25 +187,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     }
-  } else {
-    showDialog(
-      context: currentContext,
-      builder: (context) => AlertDialog(
-        title: Text('Info'),
-        content: Text('Invalid username or password'),
-        actions: [
-          TextButton(
-            child: Text('OK'),
-            onPressed: () {
-              Navigator.pop(currentContext);
-            },
-          ),
-        ],
-      ),
-    );
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
