@@ -1,0 +1,11 @@
+{
+"info" :"Info",
+"haveToActivateGPS" : "haveToActivateGPS",
+"invalidCredential" :"invalidCredential",
+"signIn" : "SignIn",
+"welcome" : "welcome",
+"username" : "Username",
+"password" : "Password",
+"memorizePassword" : "RememberPassword",
+"login" : "Login"
+}
